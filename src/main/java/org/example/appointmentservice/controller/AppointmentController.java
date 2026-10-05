@@ -1,6 +1,7 @@
 package org.example.appointmentservice.controller;
 
 import org.example.appointmentservice.service.DoctorService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,11 +14,10 @@ public class AppointmentController {
         this.doctorService = doctorService;
     }
 
-    @GetMapping("/doctor/{doctorId}/schedule")
-    public String getDoctorSchedule(
+    @GetMapping("/doctor/{doctorId}")
+    public ResponseEntity<?> getDoctor(
             @PathVariable Long doctorId
     ) {
-
-        return doctorService.getDoctorSchedule(doctorId);
+        return doctorService.getDoctor(doctorId);
     }
 }

@@ -1,37 +1,51 @@
 package org.example.appointmentservice.service;
 
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
+import org.example.appointmentservice.exception.ApiResponseError;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClient;
+
+import java.time.LocalDateTime;
 
 @Service
 public class DoctorService {
 
     private final RestClient restClient;
 
-    public DoctorService() {
-        this.restClient = RestClient.builder()
-                .baseUrl("http://localhost:8082")
-                .build();
+    public DoctorService(RestClient restClient) {
+        this.restClient = restClient;
     }
 
     @CircuitBreaker(
             name = "doctorServiceCB",
-            fallbackMethod = "doctorServiceFallback"
+            fallbackMethod = "getDoctorFallback"
     )
-    public String getDoctorSchedule(Long doctorId) {
+    public ResponseEntity<?> getDoctor(Long doctorId) {
 
-        return restClient.get()
-                .uri("/api/v1/doctors/{id}/schedule", doctorId)
+        Object doctor = restClient.get()
+                .uri("http://localhost:8082/api/v1/doctors/" + doctorId)
                 .retrieve()
-                .body(String.class);
+                .body(Object.class);
+
+        return ResponseEntity.ok(doctor);
     }
 
-    public String doctorServiceFallback(
+    public ResponseEntity<?> getDoctorFallback(
             Long doctorId,
             Throwable throwable
     ) {
 
-        return "Doctor-Service đang không khả dụng. Vui lòng thử lại sau.";
+        ApiResponseError error = new ApiResponseError(
+                LocalDateTime.now(),
+                503,
+                "Doctor Service Error",
+                "Hiện tại không thể kiểm tra thông tin bác sĩ, vui lòng thử lại sau vài giây."
+        );
+
+        return ResponseEntity
+                .status(HttpStatus.SERVICE_UNAVAILABLE)
+                .body(error);
     }
 }
